@@ -13,7 +13,9 @@ import { Route as LoginRouteImport } from './routes/login'
 import { Route as AppRouteImport } from './routes/_app'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ApiSeedRouteImport } from './routes/api.seed'
+import { Route as AppFieldsRouteImport } from './routes/_app.fields'
 import { Route as AppDashboardRouteImport } from './routes/_app.dashboard'
+import { Route as AppFieldsIdRouteImport } from './routes/_app.fields.$id'
 
 const LoginRoute = LoginRouteImport.update({
   id: '/login',
@@ -34,23 +36,37 @@ const ApiSeedRoute = ApiSeedRouteImport.update({
   path: '/api/seed',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AppFieldsRoute = AppFieldsRouteImport.update({
+  id: '/fields',
+  path: '/fields',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppDashboardRoute = AppDashboardRouteImport.update({
   id: '/dashboard',
   path: '/dashboard',
   getParentRoute: () => AppRoute,
+} as any)
+const AppFieldsIdRoute = AppFieldsIdRouteImport.update({
+  id: '/$id',
+  path: '/$id',
+  getParentRoute: () => AppFieldsRoute,
 } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
   '/dashboard': typeof AppDashboardRoute
+  '/fields': typeof AppFieldsRouteWithChildren
   '/api/seed': typeof ApiSeedRoute
+  '/fields/$id': typeof AppFieldsIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
   '/dashboard': typeof AppDashboardRoute
+  '/fields': typeof AppFieldsRouteWithChildren
   '/api/seed': typeof ApiSeedRoute
+  '/fields/$id': typeof AppFieldsIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -58,14 +74,30 @@ export interface FileRoutesById {
   '/_app': typeof AppRouteWithChildren
   '/login': typeof LoginRoute
   '/_app/dashboard': typeof AppDashboardRoute
+  '/_app/fields': typeof AppFieldsRouteWithChildren
   '/api/seed': typeof ApiSeedRoute
+  '/_app/fields/$id': typeof AppFieldsIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/login' | '/dashboard' | '/api/seed'
+  fullPaths:
+    | '/'
+    | '/login'
+    | '/dashboard'
+    | '/fields'
+    | '/api/seed'
+    | '/fields/$id'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/login' | '/dashboard' | '/api/seed'
-  id: '__root__' | '/' | '/_app' | '/login' | '/_app/dashboard' | '/api/seed'
+  to: '/' | '/login' | '/dashboard' | '/fields' | '/api/seed' | '/fields/$id'
+  id:
+    | '__root__'
+    | '/'
+    | '/_app'
+    | '/login'
+    | '/_app/dashboard'
+    | '/_app/fields'
+    | '/api/seed'
+    | '/_app/fields/$id'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -105,6 +137,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiSeedRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_app/fields': {
+      id: '/_app/fields'
+      path: '/fields'
+      fullPath: '/fields'
+      preLoaderRoute: typeof AppFieldsRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/_app/dashboard': {
       id: '/_app/dashboard'
       path: '/dashboard'
@@ -112,15 +151,36 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppDashboardRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/fields/$id': {
+      id: '/_app/fields/$id'
+      path: '/$id'
+      fullPath: '/fields/$id'
+      preLoaderRoute: typeof AppFieldsIdRouteImport
+      parentRoute: typeof AppFieldsRoute
+    }
   }
 }
 
+interface AppFieldsRouteChildren {
+  AppFieldsIdRoute: typeof AppFieldsIdRoute
+}
+
+const AppFieldsRouteChildren: AppFieldsRouteChildren = {
+  AppFieldsIdRoute: AppFieldsIdRoute,
+}
+
+const AppFieldsRouteWithChildren = AppFieldsRoute._addFileChildren(
+  AppFieldsRouteChildren,
+)
+
 interface AppRouteChildren {
   AppDashboardRoute: typeof AppDashboardRoute
+  AppFieldsRoute: typeof AppFieldsRouteWithChildren
 }
 
 const AppRouteChildren: AppRouteChildren = {
   AppDashboardRoute: AppDashboardRoute,
+  AppFieldsRoute: AppFieldsRouteWithChildren,
 }
 
 const AppRouteWithChildren = AppRoute._addFileChildren(AppRouteChildren)
