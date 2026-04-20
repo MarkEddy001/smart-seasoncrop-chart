@@ -14,16 +14,149 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      field_updates: {
+        Row: {
+          author_id: string
+          created_at: string
+          field_id: string
+          id: string
+          new_stage: Database["public"]["Enums"]["field_stage"] | null
+          note: string
+          previous_stage: Database["public"]["Enums"]["field_stage"] | null
+        }
+        Insert: {
+          author_id: string
+          created_at?: string
+          field_id: string
+          id?: string
+          new_stage?: Database["public"]["Enums"]["field_stage"] | null
+          note?: string
+          previous_stage?: Database["public"]["Enums"]["field_stage"] | null
+        }
+        Update: {
+          author_id?: string
+          created_at?: string
+          field_id?: string
+          id?: string
+          new_stage?: Database["public"]["Enums"]["field_stage"] | null
+          note?: string
+          previous_stage?: Database["public"]["Enums"]["field_stage"] | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "field_updates_field_id_fkey"
+            columns: ["field_id"]
+            isOneToOne: false
+            referencedRelation: "fields"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      fields: {
+        Row: {
+          assigned_to: string | null
+          created_at: string
+          created_by: string | null
+          crop_type: string
+          id: string
+          last_updated_at: string
+          location: string | null
+          name: string
+          planting_date: string
+          size_hectares: number | null
+          stage: Database["public"]["Enums"]["field_stage"]
+        }
+        Insert: {
+          assigned_to?: string | null
+          created_at?: string
+          created_by?: string | null
+          crop_type: string
+          id?: string
+          last_updated_at?: string
+          location?: string | null
+          name: string
+          planting_date: string
+          size_hectares?: number | null
+          stage?: Database["public"]["Enums"]["field_stage"]
+        }
+        Update: {
+          assigned_to?: string | null
+          created_at?: string
+          created_by?: string | null
+          crop_type?: string
+          id?: string
+          last_updated_at?: string
+          location?: string | null
+          name?: string
+          planting_date?: string
+          size_hectares?: number | null
+          stage?: Database["public"]["Enums"]["field_stage"]
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          created_at: string
+          email: string
+          full_name: string
+          id: string
+        }
+        Insert: {
+          created_at?: string
+          email?: string
+          full_name?: string
+          id: string
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          full_name?: string
+          id?: string
+        }
+        Relationships: []
+      }
+      user_roles: {
+        Row: {
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          id?: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      field_status: {
+        Args: {
+          _last_updated: string
+          _planting_date: string
+          _stage: Database["public"]["Enums"]["field_stage"]
+        }
+        Returns: string
+      }
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
     }
     Enums: {
-      [_ in never]: never
+      app_role: "admin" | "field_agent"
+      field_stage: "Planted" | "Growing" | "Ready" | "Harvested"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +283,9 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      app_role: ["admin", "field_agent"],
+      field_stage: ["Planted", "Growing", "Ready", "Harvested"],
+    },
   },
 } as const
