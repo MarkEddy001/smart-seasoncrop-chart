@@ -22,6 +22,7 @@ export type Database = {
           id: string
           new_stage: Database["public"]["Enums"]["field_stage"] | null
           note: string
+          photo_urls: string[]
           previous_stage: Database["public"]["Enums"]["field_stage"] | null
         }
         Insert: {
@@ -31,6 +32,7 @@ export type Database = {
           id?: string
           new_stage?: Database["public"]["Enums"]["field_stage"] | null
           note?: string
+          photo_urls?: string[]
           previous_stage?: Database["public"]["Enums"]["field_stage"] | null
         }
         Update: {
@@ -40,6 +42,7 @@ export type Database = {
           id?: string
           new_stage?: Database["public"]["Enums"]["field_stage"] | null
           note?: string
+          photo_urls?: string[]
           previous_stage?: Database["public"]["Enums"]["field_stage"] | null
         }
         Relationships: [
@@ -60,9 +63,12 @@ export type Database = {
           crop_type: string
           id: string
           last_updated_at: string
+          latitude: number | null
           location: string | null
+          longitude: number | null
           name: string
           planting_date: string
+          recent_rainfall_mm: number | null
           size_hectares: number | null
           stage: Database["public"]["Enums"]["field_stage"]
         }
@@ -73,9 +79,12 @@ export type Database = {
           crop_type: string
           id?: string
           last_updated_at?: string
+          latitude?: number | null
           location?: string | null
+          longitude?: number | null
           name: string
           planting_date: string
+          recent_rainfall_mm?: number | null
           size_hectares?: number | null
           stage?: Database["public"]["Enums"]["field_stage"]
         }
@@ -86,9 +95,12 @@ export type Database = {
           crop_type?: string
           id?: string
           last_updated_at?: string
+          latitude?: number | null
           location?: string | null
+          longitude?: number | null
           name?: string
           planting_date?: string
+          recent_rainfall_mm?: number | null
           size_hectares?: number | null
           stage?: Database["public"]["Enums"]["field_stage"]
         }
@@ -115,6 +127,42 @@ export type Database = {
         }
         Relationships: []
       }
+      signup_requests: {
+        Row: {
+          created_at: string
+          email: string
+          full_name: string
+          id: string
+          requested_role: Database["public"]["Enums"]["app_role"]
+          reviewed_at: string | null
+          reviewed_by: string | null
+          status: string
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          full_name?: string
+          id?: string
+          requested_role?: Database["public"]["Enums"]["app_role"]
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          full_name?: string
+          id?: string
+          requested_role?: Database["public"]["Enums"]["app_role"]
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           id: string
@@ -138,14 +186,24 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      field_status: {
-        Args: {
-          _last_updated: string
-          _planting_date: string
-          _stage: Database["public"]["Enums"]["field_stage"]
-        }
-        Returns: string
-      }
+      field_status:
+        | {
+            Args: {
+              _last_updated: string
+              _planting_date: string
+              _stage: Database["public"]["Enums"]["field_stage"]
+            }
+            Returns: string
+          }
+        | {
+            Args: {
+              _last_updated: string
+              _planting_date: string
+              _recent_rainfall_mm?: number
+              _stage: Database["public"]["Enums"]["field_stage"]
+            }
+            Returns: string
+          }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]

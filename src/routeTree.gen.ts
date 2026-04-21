@@ -9,14 +9,21 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as SignupRouteImport } from './routes/signup'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as AppRouteImport } from './routes/_app'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ApiSeedRouteImport } from './routes/api.seed'
+import { Route as AppUsersRouteImport } from './routes/_app.users'
 import { Route as AppFieldsRouteImport } from './routes/_app.fields'
 import { Route as AppDashboardRouteImport } from './routes/_app.dashboard'
 import { Route as AppFieldsIdRouteImport } from './routes/_app.fields.$id'
 
+const SignupRoute = SignupRouteImport.update({
+  id: '/signup',
+  path: '/signup',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const LoginRoute = LoginRouteImport.update({
   id: '/login',
   path: '/login',
@@ -35,6 +42,11 @@ const ApiSeedRoute = ApiSeedRouteImport.update({
   id: '/api/seed',
   path: '/api/seed',
   getParentRoute: () => rootRouteImport,
+} as any)
+const AppUsersRoute = AppUsersRouteImport.update({
+  id: '/users',
+  path: '/users',
+  getParentRoute: () => AppRoute,
 } as any)
 const AppFieldsRoute = AppFieldsRouteImport.update({
   id: '/fields',
@@ -55,16 +67,20 @@ const AppFieldsIdRoute = AppFieldsIdRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
+  '/signup': typeof SignupRoute
   '/dashboard': typeof AppDashboardRoute
   '/fields': typeof AppFieldsRouteWithChildren
+  '/users': typeof AppUsersRoute
   '/api/seed': typeof ApiSeedRoute
   '/fields/$id': typeof AppFieldsIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
+  '/signup': typeof SignupRoute
   '/dashboard': typeof AppDashboardRoute
   '/fields': typeof AppFieldsRouteWithChildren
+  '/users': typeof AppUsersRoute
   '/api/seed': typeof ApiSeedRoute
   '/fields/$id': typeof AppFieldsIdRoute
 }
@@ -73,8 +89,10 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/_app': typeof AppRouteWithChildren
   '/login': typeof LoginRoute
+  '/signup': typeof SignupRoute
   '/_app/dashboard': typeof AppDashboardRoute
   '/_app/fields': typeof AppFieldsRouteWithChildren
+  '/_app/users': typeof AppUsersRoute
   '/api/seed': typeof ApiSeedRoute
   '/_app/fields/$id': typeof AppFieldsIdRoute
 }
@@ -83,19 +101,31 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/login'
+    | '/signup'
     | '/dashboard'
     | '/fields'
+    | '/users'
     | '/api/seed'
     | '/fields/$id'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/login' | '/dashboard' | '/fields' | '/api/seed' | '/fields/$id'
+  to:
+    | '/'
+    | '/login'
+    | '/signup'
+    | '/dashboard'
+    | '/fields'
+    | '/users'
+    | '/api/seed'
+    | '/fields/$id'
   id:
     | '__root__'
     | '/'
     | '/_app'
     | '/login'
+    | '/signup'
     | '/_app/dashboard'
     | '/_app/fields'
+    | '/_app/users'
     | '/api/seed'
     | '/_app/fields/$id'
   fileRoutesById: FileRoutesById
@@ -104,11 +134,19 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AppRoute: typeof AppRouteWithChildren
   LoginRoute: typeof LoginRoute
+  SignupRoute: typeof SignupRoute
   ApiSeedRoute: typeof ApiSeedRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/signup': {
+      id: '/signup'
+      path: '/signup'
+      fullPath: '/signup'
+      preLoaderRoute: typeof SignupRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/login': {
       id: '/login'
       path: '/login'
@@ -136,6 +174,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/api/seed'
       preLoaderRoute: typeof ApiSeedRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/_app/users': {
+      id: '/_app/users'
+      path: '/users'
+      fullPath: '/users'
+      preLoaderRoute: typeof AppUsersRouteImport
+      parentRoute: typeof AppRoute
     }
     '/_app/fields': {
       id: '/_app/fields'
@@ -176,11 +221,13 @@ const AppFieldsRouteWithChildren = AppFieldsRoute._addFileChildren(
 interface AppRouteChildren {
   AppDashboardRoute: typeof AppDashboardRoute
   AppFieldsRoute: typeof AppFieldsRouteWithChildren
+  AppUsersRoute: typeof AppUsersRoute
 }
 
 const AppRouteChildren: AppRouteChildren = {
   AppDashboardRoute: AppDashboardRoute,
   AppFieldsRoute: AppFieldsRouteWithChildren,
+  AppUsersRoute: AppUsersRoute,
 }
 
 const AppRouteWithChildren = AppRoute._addFileChildren(AppRouteChildren)
@@ -189,6 +236,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AppRoute: AppRouteWithChildren,
   LoginRoute: LoginRoute,
+  SignupRoute: SignupRoute,
   ApiSeedRoute: ApiSeedRoute,
 }
 export const routeTree = rootRouteImport

@@ -24,33 +24,53 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [fullName, setFullName] = useState("");
   const [loading, setLoading] = useState(true);
 
-  const loadProfileAndRole = async (uid: string) => {
+  const loadProfileAndRole = async (uid: string, email: string | undefined) => {
     const [{ data: roleRow }, { data: profile }] = await Promise.all([
       supabase.from("user_roles").select("role").eq("user_id", uid).maybeSingle(),
       supabase.from("profiles").select("full_name").eq("id", uid).maybeSingle(),
     ]);
-    setRole((roleRow?.role as Role) ?? "field_agent");
+
+    let resolvedRole = (roleRow?.role as Role | undefined) ?? null;
+
+    // Auto-link approved signup requests by email → assign role on first login
+    if (!resolvedRole && email) {
+      const { data: req } = await supabase
+        .from("signup_requests")
+        .select("id, status, requested_role")
+        .eq("email", email.toLowerCase())
+        .maybeSingle();
+      if (req?.status === "approved") {
+        await supabase
+          .from("user_roles")
+          .insert({ user_id: uid, role: req.requested_role });
+        await supabase
+          .from("signup_requests")
+          .update({ user_id: uid })
+          .eq("id", req.id);
+        resolvedRole = req.requested_role as Role;
+      }
+    }
+
+    setRole(resolvedRole);
     setFullName(profile?.full_name ?? "");
   };
 
   useEffect(() => {
-    // 1. Listener first
     const { data: sub } = supabase.auth.onAuthStateChange((_event, sess) => {
       setSession(sess);
       setUser(sess?.user ?? null);
       if (sess?.user) {
-        // defer to avoid deadlock
-        setTimeout(() => loadProfileAndRole(sess.user.id), 0);
+        setTimeout(() => loadProfileAndRole(sess.user.id, sess.user.email), 0);
       } else {
         setRole(null);
         setFullName("");
       }
     });
-    // 2. Then existing session
     supabase.auth.getSession().then(({ data: { session: sess } }) => {
       setSession(sess);
       setUser(sess?.user ?? null);
-      if (sess?.user) loadProfileAndRole(sess.user.id).finally(() => setLoading(false));
+      if (sess?.user)
+        loadProfileAndRole(sess.user.id, sess.user.email).finally(() => setLoading(false));
       else setLoading(false);
     });
     return () => sub.subscription.unsubscribe();
@@ -64,7 +84,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     await supabase.auth.signOut();
   };
   const refreshRole = async () => {
-    if (user) await loadProfileAndRole(user.id);
+    if (user) await loadProfileAndRole(user.id, user.email);
   };
 
   return (

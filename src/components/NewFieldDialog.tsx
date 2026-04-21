@@ -44,6 +44,8 @@ export function NewFieldDialog({
     size_hectares: "",
     planting_date: new Date().toISOString().slice(0, 10),
     assigned_to: "",
+    latitude: "",
+    longitude: "",
   });
 
   useEffect(() => {
@@ -71,6 +73,8 @@ export function NewFieldDialog({
       size_hectares: form.size_hectares ? Number(form.size_hectares) : null,
       planting_date: form.planting_date,
       assigned_to: form.assigned_to || null,
+      latitude: form.latitude ? Number(form.latitude) : null,
+      longitude: form.longitude ? Number(form.longitude) : null,
       created_by: user?.id ?? null,
       stage: "Planted",
     });
@@ -88,6 +92,8 @@ export function NewFieldDialog({
       size_hectares: "",
       planting_date: new Date().toISOString().slice(0, 10),
       assigned_to: "",
+      latitude: "",
+      longitude: "",
     });
     onCreated();
   };
@@ -119,6 +125,14 @@ export function NewFieldDialog({
             <div className="space-y-2">
               <Label htmlFor="planted">Planting date</Label>
               <Input id="planted" type="date" required value={form.planting_date} onChange={(e) => setForm({ ...form, planting_date: e.target.value })} />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="lat">Latitude</Label>
+              <Input id="lat" type="number" step="0.0001" placeholder="-1.2921" value={form.latitude} onChange={(e) => setForm({ ...form, latitude: e.target.value })} />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="lng">Longitude</Label>
+              <Input id="lng" type="number" step="0.0001" placeholder="36.8219" value={form.longitude} onChange={(e) => setForm({ ...form, longitude: e.target.value })} />
             </div>
             <div className="col-span-2 space-y-2">
               <Label>Assign to agent</Label>
