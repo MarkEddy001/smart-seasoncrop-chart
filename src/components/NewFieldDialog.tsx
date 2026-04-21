@@ -44,6 +44,8 @@ export function NewFieldDialog({
     size_hectares: "",
     planting_date: new Date().toISOString().slice(0, 10),
     assigned_to: "",
+    latitude: "",
+    longitude: "",
   });
 
   useEffect(() => {

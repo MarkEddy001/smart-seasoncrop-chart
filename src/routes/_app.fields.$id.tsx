@@ -1,10 +1,12 @@
 import { createFileRoute, Link, useParams } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
 import { computeStatus, STAGES, type Stage } from "@/lib/status";
+import { fetchFieldWeather, type FieldWeather } from "@/lib/weather";
 import { StageBadge } from "@/components/StageBadge";
 import { StatusBadge } from "@/components/StatusBadge";
+import { WeatherCard } from "@/components/WeatherCard";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -17,7 +19,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { ArrowLeft, Loader2 } from "lucide-react";
+import { ArrowLeft, Loader2, ImagePlus, X } from "lucide-react";
 import { format } from "date-fns";
 import { toast } from "sonner";
 
@@ -36,6 +38,9 @@ interface FieldRow {
   last_updated_at: string;
   assigned_to: string | null;
   created_at: string;
+  latitude: number | null;
+  longitude: number | null;
+  recent_rainfall_mm: number | null;
 }
 interface UpdateRow {
   id: string;
@@ -44,6 +49,7 @@ interface UpdateRow {
   new_stage: Stage | null;
   previous_stage: Stage | null;
   author_id: string;
+  photo_urls: string[];
   profiles: { full_name: string } | null;
 }
 
@@ -55,8 +61,13 @@ function FieldDetailPage() {
   const [agentName, setAgentName] = useState<string>("");
   const [stage, setStage] = useState<Stage>("Planted");
   const [note, setNote] = useState("");
+  const [photos, setPhotos] = useState<File[]>([]);
   const [saving, setSaving] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [weather, setWeather] = useState<FieldWeather | null>(null);
+  const [weatherLoading, setWeatherLoading] = useState(false);
+  const [weatherError, setWeatherError] = useState<string | null>(null);
+  const fileRef = useRef<HTMLInputElement>(null);
 
   const load = async () => {
     const { data } = await supabase
@@ -69,7 +80,7 @@ function FieldDetailPage() {
 
     const { data: u } = await supabase
       .from("field_updates")
-      .select("id, created_at, note, new_stage, previous_stage, author_id, profiles:author_id(full_name)")
+      .select("id, created_at, note, new_stage, previous_stage, author_id, photo_urls, profiles:author_id(full_name)")
       .eq("field_id", id)
       .order("created_at", { ascending: false });
     setUpdates((u as unknown as UpdateRow[]) ?? []);
@@ -90,36 +101,87 @@ function FieldDetailPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
 
+  // Fetch weather whenever we have coordinates
+  useEffect(() => {
+    if (!field?.latitude || !field?.longitude) return;
+    const ctrl = new AbortController();
+    setWeatherLoading(true);
+    setWeatherError(null);
+    fetchFieldWeather(field.latitude, field.longitude, ctrl.signal)
+      .then(async (w) => {
+        setWeather(w);
+        // Cache rainfall on the field (best-effort, requires update permission)
+        if (field.recent_rainfall_mm !== w.rainfall7dMm) {
+          await supabase
+            .from("fields")
+            .update({ recent_rainfall_mm: w.rainfall7dMm })
+            .eq("id", field.id);
+        }
+      })
+      .catch((e) => {
+        if (e.name !== "AbortError") setWeatherError("Weather unavailable");
+      })
+      .finally(() => setWeatherLoading(false));
+    return () => ctrl.abort();
+  }, [field?.id, field?.latitude, field?.longitude]);
+
   const canEdit = !!field && (role === "admin" || field.assigned_to === user?.id);
+
+  const onPickFiles = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files ?? []);
+    if (files.length + photos.length > 4) {
+      toast.error("Up to 4 photos per update");
+      return;
+    }
+    setPhotos((p) => [...p, ...files]);
+    e.target.value = "";
+  };
+
+  const removePhoto = (i: number) => setPhotos((p) => p.filter((_, idx) => idx !== i));
 
   const submitUpdate = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!field || !user) return;
-    if (stage === field.stage && !note.trim()) {
-      toast.error("Change the stage or add a note.");
+    if (stage === field.stage && !note.trim() && photos.length === 0) {
+      toast.error("Change the stage, add a note, or attach a photo.");
       return;
     }
     setSaving(true);
     const previous = field.stage;
 
-    if (stage !== previous) {
-      const { error: upErr } = await supabase.from("fields").update({ stage }).eq("id", field.id);
+    // 1. Upload photos
+    const photoUrls: string[] = [];
+    for (const file of photos) {
+      const ext = file.name.split(".").pop() ?? "jpg";
+      const path = `${user.id}/${field.id}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
+      const { error: upErr } = await supabase.storage
+        .from("field-photos")
+        .upload(path, file, { upsert: false, contentType: file.type });
       if (upErr) {
         setSaving(false);
-        toast.error(upErr.message);
+        toast.error(`Photo upload failed: ${upErr.message}`);
         return;
       }
-    } else {
-      // touch last_updated_at when only adding a note
-      await supabase.from("fields").update({ stage }).eq("id", field.id);
+      const { data: pub } = supabase.storage.from("field-photos").getPublicUrl(path);
+      photoUrls.push(pub.publicUrl);
     }
 
+    // 2. Touch field (stage change or just last_updated_at)
+    const { error: upErr } = await supabase.from("fields").update({ stage }).eq("id", field.id);
+    if (upErr) {
+      setSaving(false);
+      toast.error(upErr.message);
+      return;
+    }
+
+    // 3. Insert update
     const { error: insErr } = await supabase.from("field_updates").insert({
       field_id: field.id,
       author_id: user.id,
       previous_stage: previous,
       new_stage: stage,
       note: note.trim(),
+      photo_urls: photoUrls,
     });
     setSaving(false);
     if (insErr) {
@@ -128,6 +190,7 @@ function FieldDetailPage() {
     }
     toast.success("Update logged");
     setNote("");
+    setPhotos([]);
     load();
   };
 
@@ -150,7 +213,12 @@ function FieldDetailPage() {
     );
   }
 
-  const status = computeStatus(field.stage, field.planting_date, field.last_updated_at);
+  const status = computeStatus(
+    field.stage,
+    field.planting_date,
+    field.last_updated_at,
+    weather?.rainfall7dMm ?? field.recent_rainfall_mm,
+  );
 
   return (
     <div className="space-y-6">
@@ -174,15 +242,31 @@ function FieldDetailPage() {
       </header>
 
       <div className="grid gap-6 lg:grid-cols-3">
-        <Card className="lg:col-span-1">
-          <CardHeader><CardTitle>Details</CardTitle></CardHeader>
-          <CardContent className="space-y-3 text-sm">
-            <Row k="Planted" v={format(new Date(field.planting_date), "PPP")} />
-            <Row k="Last updated" v={format(new Date(field.last_updated_at), "PPP")} />
-            <Row k="Assigned agent" v={agentName || "Unassigned"} />
-            <Row k="Created" v={format(new Date(field.created_at), "PP")} />
-          </CardContent>
-        </Card>
+        <div className="lg:col-span-1 space-y-6">
+          <Card>
+            <CardHeader><CardTitle>Details</CardTitle></CardHeader>
+            <CardContent className="space-y-3 text-sm">
+              <Row k="Planted" v={format(new Date(field.planting_date), "PPP")} />
+              <Row k="Last updated" v={format(new Date(field.last_updated_at), "PPP")} />
+              <Row k="Assigned agent" v={agentName || "Unassigned"} />
+              <Row k="Created" v={format(new Date(field.created_at), "PP")} />
+              {field.latitude != null && field.longitude != null && (
+                <Row k="Coordinates" v={`${field.latitude.toFixed(3)}, ${field.longitude.toFixed(3)}`} />
+              )}
+            </CardContent>
+          </Card>
+
+          {field.latitude != null && field.longitude != null ? (
+            <WeatherCard weather={weather} loading={weatherLoading} error={weatherError} />
+          ) : (
+            <Card>
+              <CardHeader><CardTitle className="text-base">Weather</CardTitle></CardHeader>
+              <CardContent className="text-sm text-muted-foreground">
+                Add coordinates to this field to see live weather.
+              </CardContent>
+            </Card>
+          )}
+        </div>
 
         <Card className="lg:col-span-2">
           <CardHeader>
@@ -212,6 +296,42 @@ function FieldDetailPage() {
                     onChange={(e) => setNote(e.target.value)}
                   />
                 </div>
+
+                <div className="space-y-2">
+                  <Label>Photos (optional, up to 4)</Label>
+                  <input
+                    ref={fileRef}
+                    type="file"
+                    accept="image/*"
+                    multiple
+                    className="hidden"
+                    onChange={onPickFiles}
+                  />
+                  <div className="flex flex-wrap gap-2">
+                    {photos.map((f, i) => (
+                      <div key={i} className="relative h-20 w-20 rounded-md overflow-hidden border">
+                        <img src={URL.createObjectURL(f)} alt="" className="h-full w-full object-cover" />
+                        <button
+                          type="button"
+                          onClick={() => removePhoto(i)}
+                          className="absolute top-1 right-1 bg-background/80 rounded-full p-0.5"
+                        >
+                          <X className="h-3 w-3" />
+                        </button>
+                      </div>
+                    ))}
+                    {photos.length < 4 && (
+                      <button
+                        type="button"
+                        onClick={() => fileRef.current?.click()}
+                        className="h-20 w-20 rounded-md border border-dashed flex items-center justify-center text-muted-foreground hover:text-foreground hover:border-primary"
+                      >
+                        <ImagePlus className="h-5 w-5" />
+                      </button>
+                    )}
+                  </div>
+                </div>
+
                 <Button type="submit" disabled={saving}>
                   {saving && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
                   Save update
@@ -247,6 +367,21 @@ function FieldDetailPage() {
                     </span>
                   </div>
                   {u.note && <p className="text-sm mt-2 whitespace-pre-wrap">{u.note}</p>}
+                  {u.photo_urls && u.photo_urls.length > 0 && (
+                    <div className="mt-3 flex flex-wrap gap-2">
+                      {u.photo_urls.map((url) => (
+                        <a
+                          key={url}
+                          href={url}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="block h-24 w-24 rounded-md overflow-hidden border hover:ring-2 hover:ring-primary transition-all"
+                        >
+                          <img src={url} alt="Field update" className="h-full w-full object-cover" />
+                        </a>
+                      ))}
+                    </div>
+                  )}
                 </li>
               ))}
             </ul>

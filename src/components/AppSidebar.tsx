@@ -1,5 +1,5 @@
 import { Link, useLocation, useNavigate } from "@tanstack/react-router";
-import { LayoutDashboard, Sprout, LogOut, Leaf } from "lucide-react";
+import { LayoutDashboard, Sprout, LogOut, Leaf, Users } from "lucide-react";
 import { useAuth } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -12,6 +12,9 @@ export function AppSidebar() {
   const items = [
     { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
     { to: "/fields", label: "Fields", icon: Sprout },
+    ...(role === "admin"
+      ? ([{ to: "/users", label: "Users", icon: Users }] as const)
+      : ([] as const)),
   ] as const;
 
   return (

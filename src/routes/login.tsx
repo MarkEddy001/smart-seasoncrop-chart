@@ -118,13 +118,12 @@ function LoginPage() {
               >
                 <span className="font-medium">Agent 2:</span> agent2@smartseason.app / Agent123!
               </button>
-              <div className="text-xs text-muted-foreground pt-1">
-                First time?{" "}
-                <Link to="/api/seed" className="text-primary underline">
-                  Seed demo data
-                </Link>
-              </div>
             </div>
+
+            <p className="text-xs text-center text-muted-foreground mt-6">
+              New to SmartSeason?{" "}
+              <Link to="/signup" className="text-primary hover:underline">Request access</Link>
+            </p>
           </CardContent>
         </Card>
       </div>
