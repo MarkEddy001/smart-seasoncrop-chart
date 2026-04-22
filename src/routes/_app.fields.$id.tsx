@@ -125,7 +125,86 @@ function FieldDetailPage() {
     return () => ctrl.abort();
   }, [field?.id, field?.latitude, field?.longitude]);
 
-  const canEdit = !!field && (role === "admin" || field.assigned_to === user?.id);
+  const isAdmin = role === "admin";
+  const canEdit = !!field && (isAdmin || field.assigned_to === user?.id);
+  const pendingHarvest = !!field?.pending_harvest_at && field.stage !== "Harvested";
+  // Agents cannot select Harvested — only admins can finalize a harvest
+  const availableStages = isAdmin ? STAGES : STAGES.filter((s) => s !== "Harvested");
+
+  const requestHarvest = async () => {
+    if (!field || !user) return;
+    setSaving(true);
+    const { error } = await supabase
+      .from("fields")
+      .update({ pending_harvest_at: new Date().toISOString() })
+      .eq("id", field.id);
+    if (!error) {
+      await supabase.from("field_updates").insert({
+        field_id: field.id,
+        author_id: user.id,
+        previous_stage: field.stage,
+        new_stage: field.stage,
+        note: "🌾 Harvest requested — awaiting admin verification.",
+        photo_urls: [],
+      });
+    }
+    setSaving(false);
+    if (error) toast.error(error.message);
+    else {
+      toast.success("Harvest request sent to admin");
+      load();
+    }
+  };
+
+  const approveHarvest = async () => {
+    if (!field || !user) return;
+    setSaving(true);
+    const { error } = await supabase
+      .from("fields")
+      .update({ stage: "Harvested", pending_harvest_at: null })
+      .eq("id", field.id);
+    if (!error) {
+      await supabase.from("field_updates").insert({
+        field_id: field.id,
+        author_id: user.id,
+        previous_stage: field.stage,
+        new_stage: "Harvested",
+        note: "✅ Harvest approved by admin.",
+        photo_urls: [],
+      });
+    }
+    setSaving(false);
+    if (error) toast.error(error.message);
+    else {
+      toast.success("Harvest approved — field marked Completed");
+      load();
+    }
+  };
+
+  const rejectHarvest = async () => {
+    if (!field || !user) return;
+    setSaving(true);
+    const { error } = await supabase
+      .from("fields")
+      .update({ pending_harvest_at: null })
+      .eq("id", field.id);
+    if (!error) {
+      await supabase.from("field_updates").insert({
+        field_id: field.id,
+        author_id: user.id,
+        previous_stage: field.stage,
+        new_stage: field.stage,
+        note: "❌ Harvest request rejected by admin — please continue monitoring.",
+        photo_urls: [],
+      });
+    }
+    setSaving(false);
+    if (error) toast.error(error.message);
+    else {
+      toast.success("Harvest request rejected");
+      load();
+    }
+  };
 
   const onPickFiles = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files ?? []);
