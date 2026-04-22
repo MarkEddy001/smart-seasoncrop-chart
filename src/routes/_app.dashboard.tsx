@@ -2,10 +2,10 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Sprout, Activity, AlertTriangle, CheckCircle2, ArrowRight } from "lucide-react";
+import { Sprout, Activity, AlertTriangle, CheckCircle2, ArrowRight, TrendingUp, AlertCircle } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
-import { computeStatus, type Stage, type Status } from "@/lib/status";
+import { computeStatus, STAGES, type Stage, type Status } from "@/lib/status";
 import { StatusBadge } from "@/components/StatusBadge";
 import { StageBadge } from "@/components/StageBadge";
 import { format } from "date-fns";
@@ -114,6 +114,18 @@ function DashboardPage() {
       return acc;
     }, {});
 
+  // Stage breakdown counts
+  const stageCounts: Record<Stage, number> = {
+    Planted: 0,
+    Growing: 0,
+    Ready: 0,
+    Harvested: 0,
+  };
+  enriched.forEach((f) => {
+    stageCounts[f.stage] = (stageCounts[f.stage] ?? 0) + 1;
+  });
+  const topStage = STAGES.reduce((a, b) => (stageCounts[a] >= stageCounts[b] ? a : b));
+
   return (
     <div className="space-y-8">
       <header className="flex items-end justify-between flex-wrap gap-3">
@@ -136,10 +148,34 @@ function DashboardPage() {
       </header>
 
       <section className="grid gap-4 md:grid-cols-4">
-        <StatCard label="Total fields" value={total} icon={Sprout} accent="primary" />
-        <StatCard label="Active" value={counts.Active} icon={Activity} accent="success" />
-        <StatCard label="At risk" value={counts["At Risk"]} icon={AlertTriangle} accent="warning" />
-        <StatCard label="Completed" value={counts.Completed} icon={CheckCircle2} accent="muted" />
+        <StatCard
+          label="Total fields"
+          value={total}
+          icon={Sprout}
+          accent="primary"
+          sublabel={role === "admin" ? "across all agents" : "assigned to you"}
+        />
+        <StatCard
+          label="Active"
+          value={counts.Active}
+          icon={Activity}
+          accent="success"
+          sublabel="progressing normally"
+        />
+        <StatCard
+          label="At risk"
+          value={counts["At Risk"]}
+          icon={AlertTriangle}
+          accent="warning"
+          sublabel="need attention"
+        />
+        <StatCard
+          label="Completed"
+          value={counts.Completed}
+          icon={CheckCircle2}
+          accent="muted"
+          sublabel="harvested this season"
+        />
       </section>
 
       <section className="grid gap-6 lg:grid-cols-3">
@@ -205,6 +241,83 @@ function DashboardPage() {
         </Card>
       </section>
 
+      <section className="grid gap-6 lg:grid-cols-2">
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-base">
+              <TrendingUp className="h-4 w-4 text-primary" />
+              Stage breakdown
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            {STAGES.map((stage) => {
+              const count = stageCounts[stage] ?? 0;
+              const pct = total > 0 ? Math.round((count / total) * 100) : 0;
+              return (
+                <div key={stage}>
+                  <div className="flex items-center justify-between mb-1.5">
+                    <StageBadge stage={stage} />
+                    <span className="text-sm font-semibold tabular-nums">{count}</span>
+                  </div>
+                  <div className="h-1.5 w-full rounded-full bg-muted overflow-hidden">
+                    <div
+                      className="h-full rounded-full bg-primary/70 transition-all duration-500"
+                      style={{ width: `${pct}%` }}
+                    />
+                  </div>
+                </div>
+              );
+            })}
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-base">
+              <AlertCircle className="h-4 w-4 text-warning-foreground" />
+              Insights
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            {counts["At Risk"] > 0 ? (
+              <div className="rounded-lg border border-warning/30 bg-warning/10 p-3">
+                <p className="text-sm font-medium">
+                  ⚠ {counts["At Risk"]} field{counts["At Risk"] > 1 ? "s" : ""} at risk
+                </p>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Overdue (&gt;100 days), stale (&gt;10 days), or extreme rainfall conditions detected.
+                </p>
+              </div>
+            ) : (
+              <div className="rounded-lg border border-success/30 bg-success/10 p-3">
+                <p className="text-sm font-medium text-success">✓ All fields on track</p>
+                <p className="text-xs text-muted-foreground mt-1">
+                  No at-risk fields right now. Keep the updates flowing.
+                </p>
+              </div>
+            )}
+
+            {total > 0 && (
+              <div className="rounded-lg border border-primary/20 bg-primary/5 p-3">
+                <p className="text-sm font-medium">📊 Most fields: {topStage}</p>
+                <p className="text-xs text-muted-foreground mt-1">
+                  {stageCounts[topStage]} of {total} fields are in this stage.
+                </p>
+              </div>
+            )}
+
+            <div className="rounded-lg border bg-muted/40 p-3">
+              <p className="text-sm font-medium">🌱 Season overview</p>
+              <p className="text-xs text-muted-foreground mt-1">
+                {counts.Completed > 0
+                  ? `${counts.Completed} harvest${counts.Completed > 1 ? "s" : ""} completed this season.`
+                  : "No harvests completed yet this season."}
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+      </section>
+
       {role === "admin" && Object.keys(atRiskByAgent).length > 0 && (
         <section>
           <Card>
@@ -237,11 +350,13 @@ function StatCard({
   value,
   icon: Icon,
   accent,
+  sublabel,
 }: {
   label: string;
   value: number;
   icon: React.ComponentType<{ className?: string }>;
   accent: "primary" | "success" | "warning" | "muted";
+  sublabel?: string;
 }) {
   const tone = {
     primary: "bg-primary/10 text-primary",
@@ -255,9 +370,12 @@ function StatCard({
         <div className={`h-11 w-11 rounded-lg flex items-center justify-center ${tone}`}>
           <Icon className="h-5 w-5" />
         </div>
-        <div>
+        <div className="min-w-0">
           <div className="text-2xl font-semibold tracking-tight">{value}</div>
           <div className="text-xs text-muted-foreground uppercase tracking-wide">{label}</div>
+          {sublabel && (
+            <div className="text-[11px] text-muted-foreground/70 mt-0.5 truncate">{sublabel}</div>
+          )}
         </div>
       </CardContent>
     </Card>
