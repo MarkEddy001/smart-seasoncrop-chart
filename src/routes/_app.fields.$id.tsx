@@ -449,10 +449,22 @@ function FieldDetailPage() {
                   </div>
                 </div>
 
-                <Button type="submit" disabled={saving}>
-                  {saving && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
-                  Save update
-                </Button>
+                <div className="flex flex-wrap gap-2">
+                  <Button type="submit" disabled={saving}>
+                    {saving && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
+                    Save update
+                  </Button>
+                  {canEdit && !isAdmin && field.stage !== "Harvested" && !pendingHarvest && (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={requestHarvest}
+                      disabled={saving}
+                    >
+                      🌾 Request harvest
+                    </Button>
+                  )}
+                </div>
               </form>
             ) : (
               <p className="text-sm text-muted-foreground">View-only access.</p>
