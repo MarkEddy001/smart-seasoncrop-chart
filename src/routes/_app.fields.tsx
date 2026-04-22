@@ -54,6 +54,8 @@ function FieldsPage() {
   const [stageFilter, setStageFilter] = useState<string>("all");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [open, setOpen] = useState(false);
+  const [pendingDelete, setPendingDelete] = useState<FieldRow | null>(null);
+  const [deleting, setDeleting] = useState(false);
 
   const load = async () => {
     const { data } = await supabase
@@ -65,6 +67,20 @@ function FieldsPage() {
     const m: Record<string, string> = {};
     (profs ?? []).forEach((p) => (m[p.id] = p.full_name));
     setAgents(m);
+  };
+
+  const confirmDelete = async () => {
+    if (!pendingDelete) return;
+    setDeleting(true);
+    const { error } = await supabase.from("fields").delete().eq("id", pendingDelete.id);
+    setDeleting(false);
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
+    toast.success(`"${pendingDelete.name}" deleted`);
+    setPendingDelete(null);
+    load();
   };
 
   useEffect(() => {
