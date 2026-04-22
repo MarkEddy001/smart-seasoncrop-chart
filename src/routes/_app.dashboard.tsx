@@ -273,11 +273,13 @@ function StatCard({
   value,
   icon: Icon,
   accent,
+  sublabel,
 }: {
   label: string;
   value: number;
   icon: React.ComponentType<{ className?: string }>;
   accent: "primary" | "success" | "warning" | "muted";
+  sublabel?: string;
 }) {
   const tone = {
     primary: "bg-primary/10 text-primary",
@@ -291,9 +293,12 @@ function StatCard({
         <div className={`h-11 w-11 rounded-lg flex items-center justify-center ${tone}`}>
           <Icon className="h-5 w-5" />
         </div>
-        <div>
+        <div className="min-w-0">
           <div className="text-2xl font-semibold tracking-tight">{value}</div>
           <div className="text-xs text-muted-foreground uppercase tracking-wide">{label}</div>
+          {sublabel && (
+            <div className="text-[11px] text-muted-foreground/70 mt-0.5 truncate">{sublabel}</div>
+          )}
         </div>
       </CardContent>
     </Card>
