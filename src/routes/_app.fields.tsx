@@ -130,7 +130,7 @@ function FieldsPage() {
           <div className="relative flex-1 min-w-[200px]">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
-              placeholder="Search by name, crop, location..."
+              placeholder={role === "admin" ? "Search by name, crop, location, agent..." : "Search by name, crop, location..."}
               value={q}
               onChange={(e) => setQ(e.target.value)}
               className="pl-9"
@@ -176,6 +176,7 @@ function FieldsPage() {
                   {role === "admin" && <th className="p-4 font-medium">Agent</th>}
                   <th className="p-4 font-medium">Planted</th>
                   <th className="p-4 font-medium">Updated</th>
+                  {role === "admin" && <th className="p-4 font-medium w-12"></th>}
                 </tr>
               </thead>
               <tbody>
@@ -199,6 +200,22 @@ function FieldsPage() {
                     )}
                     <td className="p-4 text-muted-foreground">{format(new Date(r.planting_date), "PP")}</td>
                     <td className="p-4 text-muted-foreground">{format(new Date(r.last_updated_at), "PP")}</td>
+                    {role === "admin" && (
+                      <td className="p-4 text-right">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8 text-muted-foreground hover:text-destructive"
+                          onClick={(e) => {
+                            e.preventDefault();
+                            setPendingDelete(r);
+                          }}
+                          aria-label={`Delete ${r.name}`}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </td>
+                    )}
                   </tr>
                 ))}
               </tbody>
