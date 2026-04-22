@@ -96,16 +96,18 @@ function FieldsPage() {
         if (statusFilter !== "all" && r.status !== statusFilter) return false;
         if (q) {
           const needle = q.toLowerCase();
+          const agentName = r.assigned_to ? (agents[r.assigned_to] ?? "").toLowerCase() : "";
           if (
             !r.name.toLowerCase().includes(needle) &&
             !r.crop_type.toLowerCase().includes(needle) &&
-            !(r.location ?? "").toLowerCase().includes(needle)
+            !(r.location ?? "").toLowerCase().includes(needle) &&
+            !agentName.includes(needle)
           )
             return false;
         }
         return true;
       });
-  }, [rows, q, stageFilter, statusFilter]);
+  }, [rows, q, stageFilter, statusFilter, agents]);
 
   return (
     <div className="space-y-6">
