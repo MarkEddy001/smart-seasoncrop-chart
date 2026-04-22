@@ -57,20 +57,22 @@ function DashboardPage() {
 
   useEffect(() => {
     (async () => {
-      const { data: f } = await supabase
-        .from("fields")
-        .select("id, name, crop_type, stage, planting_date, last_updated_at, assigned_to")
-        .order("last_updated_at", { ascending: false });
+      // All three queries in parallel — much faster than sequential
+      const [{ data: f }, { data: u }, { data: profs }] = await Promise.all([
+        supabase
+          .from("fields")
+          .select("id, name, crop_type, stage, planting_date, last_updated_at, assigned_to")
+          .order("last_updated_at", { ascending: false }),
+        supabase
+          .from("field_updates")
+          .select("id, created_at, note, new_stage, field_id, author_id, fields(name), profiles:author_id(full_name)")
+          .order("created_at", { ascending: false })
+          .limit(8),
+        supabase.from("profiles").select("id, full_name"),
+      ]);
+
       setFields((f as FieldRow[]) ?? []);
-
-      const { data: u } = await supabase
-        .from("field_updates")
-        .select("id, created_at, note, new_stage, field_id, author_id, fields(name), profiles:author_id(full_name)")
-        .order("created_at", { ascending: false })
-        .limit(8);
       setUpdates((u as unknown as UpdateRow[]) ?? []);
-
-      const { data: profs } = await supabase.from("profiles").select("id, full_name");
       const map: Record<string, string> = {};
       (profs ?? []).forEach((p) => (map[p.id] = p.full_name));
       setAgentMap(map);
