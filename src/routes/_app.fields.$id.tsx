@@ -71,26 +71,25 @@ function FieldDetailPage() {
   const fileRef = useRef<HTMLInputElement>(null);
 
   const load = async () => {
-    const { data } = await supabase
-      .from("fields")
-      .select("*")
-      .eq("id", id)
-      .maybeSingle();
-    setField(data as FieldRow | null);
-    if (data) setStage(data.stage as Stage);
+    // Run field + updates queries in parallel
+    const [{ data: fieldData }, { data: u }] = await Promise.all([
+      supabase.from("fields").select("*").eq("id", id).maybeSingle(),
+      supabase
+        .from("field_updates")
+        .select("id, created_at, note, new_stage, previous_stage, author_id, photo_urls, profiles:author_id(full_name)")
+        .eq("field_id", id)
+        .order("created_at", { ascending: false }),
+    ]);
 
-    const { data: u } = await supabase
-      .from("field_updates")
-      .select("id, created_at, note, new_stage, previous_stage, author_id, photo_urls, profiles:author_id(full_name)")
-      .eq("field_id", id)
-      .order("created_at", { ascending: false });
+    setField(fieldData as FieldRow | null);
+    if (fieldData) setStage(fieldData.stage as Stage);
     setUpdates((u as unknown as UpdateRow[]) ?? []);
 
-    if (data?.assigned_to) {
+    if (fieldData?.assigned_to) {
       const { data: p } = await supabase
         .from("profiles")
         .select("full_name")
-        .eq("id", data.assigned_to)
+        .eq("id", fieldData.assigned_to)
         .maybeSingle();
       setAgentName(p?.full_name ?? "");
     } else setAgentName("");
