@@ -314,11 +314,44 @@ function FieldDetailPage() {
             {field.size_hectares && ` · ${field.size_hectares} ha`}
           </p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex gap-2 flex-wrap">
           <StageBadge stage={field.stage} />
           <StatusBadge status={status} />
+          {pendingHarvest && (
+            <span className="inline-flex items-center rounded-md border border-warning/40 bg-warning/15 px-2 py-0.5 text-xs font-medium text-warning-foreground">
+              Harvest pending approval
+            </span>
+          )}
         </div>
       </header>
+
+      {pendingHarvest && (
+        <Card className="border-warning/40 bg-warning/5">
+          <CardContent className="p-4 flex items-center justify-between flex-wrap gap-3">
+            <div className="text-sm">
+              <p className="font-medium">Harvest verification needed</p>
+              <p className="text-muted-foreground text-xs mt-0.5">
+                The field agent has marked this field ready for harvest on{" "}
+                {format(new Date(field.pending_harvest_at!), "PP p")}.
+                {isAdmin
+                  ? " Approve to mark it Harvested, or reject to keep monitoring."
+                  : " An admin will review and confirm shortly."}
+              </p>
+            </div>
+            {isAdmin && (
+              <div className="flex gap-2">
+                <Button size="sm" variant="outline" onClick={rejectHarvest} disabled={saving}>
+                  Reject
+                </Button>
+                <Button size="sm" onClick={approveHarvest} disabled={saving}>
+                  {saving && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
+                  Approve harvest
+                </Button>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
 
       <div className="grid gap-6 lg:grid-cols-3">
         <div className="lg:col-span-1 space-y-6">
