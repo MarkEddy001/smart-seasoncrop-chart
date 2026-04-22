@@ -317,6 +317,8 @@ function DashboardPage() {
           </CardContent>
         </Card>
       </section>
+
+      {role === "admin" && Object.keys(atRiskByAgent).length > 0 && (
         <section>
           <Card>
             <CardHeader>
