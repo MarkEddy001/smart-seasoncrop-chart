@@ -41,6 +41,7 @@ interface FieldRow {
   latitude: number | null;
   longitude: number | null;
   recent_rainfall_mm: number | null;
+  pending_harvest_at: string | null;
 }
 interface UpdateRow {
   id: string;
