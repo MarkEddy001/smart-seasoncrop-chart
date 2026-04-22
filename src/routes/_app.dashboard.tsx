@@ -114,6 +114,18 @@ function DashboardPage() {
       return acc;
     }, {});
 
+  // Stage breakdown counts
+  const stageCounts: Record<Stage, number> = {
+    Planted: 0,
+    Growing: 0,
+    Ready: 0,
+    Harvested: 0,
+  };
+  enriched.forEach((f) => {
+    stageCounts[f.stage] = (stageCounts[f.stage] ?? 0) + 1;
+  });
+  const topStage = STAGES.reduce((a, b) => (stageCounts[a] >= stageCounts[b] ? a : b));
+
   return (
     <div className="space-y-8">
       <header className="flex items-end justify-between flex-wrap gap-3">
@@ -136,10 +148,34 @@ function DashboardPage() {
       </header>
 
       <section className="grid gap-4 md:grid-cols-4">
-        <StatCard label="Total fields" value={total} icon={Sprout} accent="primary" />
-        <StatCard label="Active" value={counts.Active} icon={Activity} accent="success" />
-        <StatCard label="At risk" value={counts["At Risk"]} icon={AlertTriangle} accent="warning" />
-        <StatCard label="Completed" value={counts.Completed} icon={CheckCircle2} accent="muted" />
+        <StatCard
+          label="Total fields"
+          value={total}
+          icon={Sprout}
+          accent="primary"
+          sublabel={role === "admin" ? "across all agents" : "assigned to you"}
+        />
+        <StatCard
+          label="Active"
+          value={counts.Active}
+          icon={Activity}
+          accent="success"
+          sublabel="progressing normally"
+        />
+        <StatCard
+          label="At risk"
+          value={counts["At Risk"]}
+          icon={AlertTriangle}
+          accent="warning"
+          sublabel="need attention"
+        />
+        <StatCard
+          label="Completed"
+          value={counts.Completed}
+          icon={CheckCircle2}
+          accent="muted"
+          sublabel="harvested this season"
+        />
       </section>
 
       <section className="grid gap-6 lg:grid-cols-3">
