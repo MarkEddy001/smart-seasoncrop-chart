@@ -44,6 +44,7 @@ interface FieldRow {
   planting_date: string;
   last_updated_at: string;
   assigned_to: string | null;
+  pending_harvest_at: string | null;
 }
 
 function FieldsPage() {
