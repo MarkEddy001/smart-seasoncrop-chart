@@ -228,21 +228,27 @@ function FieldDetailPage() {
     setSaving(true);
     const previous = field.stage;
 
-    // 1. Upload photos
-    const photoUrls: string[] = [];
-    for (const file of photos) {
-      const ext = file.name.split(".").pop() ?? "jpg";
-      const path = `${user.id}/${field.id}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
-      const { error: upErr } = await supabase.storage
-        .from("field-photos")
-        .upload(path, file, { upsert: false, contentType: file.type });
-      if (upErr) {
+    // 1. Upload photos in parallel (much faster than sequential)
+    let photoUrls: string[] = [];
+    if (photos.length > 0) {
+      try {
+        photoUrls = await Promise.all(
+          photos.map(async (file) => {
+            const ext = file.name.split(".").pop() ?? "jpg";
+            const path = `${user.id}/${field.id}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
+            const { error: upErr } = await supabase.storage
+              .from("field-photos")
+              .upload(path, file, { upsert: false, contentType: file.type });
+            if (upErr) throw upErr;
+            const { data: pub } = supabase.storage.from("field-photos").getPublicUrl(path);
+            return pub.publicUrl;
+          }),
+        );
+      } catch (e) {
         setSaving(false);
-        toast.error(`Photo upload failed: ${upErr.message}`);
+        toast.error(`Photo upload failed: ${(e as Error).message}`);
         return;
       }
-      const { data: pub } = supabase.storage.from("field-photos").getPublicUrl(path);
-      photoUrls.push(pub.publicUrl);
     }
 
     // 2. Touch field (stage change or just last_updated_at)
