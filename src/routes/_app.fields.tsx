@@ -195,7 +195,16 @@ function FieldsPage() {
                       )}
                     </td>
                     <td className="p-4">{r.crop_type}</td>
-                    <td className="p-4"><StageBadge stage={r.stage} /></td>
+                    <td className="p-4">
+                      <div className="flex items-center gap-1.5 flex-wrap">
+                        <StageBadge stage={r.stage} />
+                        {r.pending_harvest_at && r.stage !== "Harvested" && (
+                          <span className="inline-flex items-center rounded-md border border-warning/40 bg-warning/15 px-1.5 py-0.5 text-[10px] font-medium text-warning-foreground">
+                            Harvest pending
+                          </span>
+                        )}
+                      </div>
+                    </td>
                     <td className="p-4"><StatusBadge status={r.status as Status} /></td>
                     {role === "admin" && (
                       <td className="p-4 text-muted-foreground">
