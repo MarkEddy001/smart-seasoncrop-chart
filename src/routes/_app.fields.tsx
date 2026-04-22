@@ -59,12 +59,15 @@ function FieldsPage() {
   const [deleting, setDeleting] = useState(false);
 
   const load = async () => {
-    const { data } = await supabase
-      .from("fields")
-      .select("id, name, crop_type, location, stage, planting_date, last_updated_at, assigned_to")
-      .order("created_at", { ascending: false });
+    // Run both queries in parallel for faster load
+    const [{ data }, { data: profs }] = await Promise.all([
+      supabase
+        .from("fields")
+        .select("id, name, crop_type, location, stage, planting_date, last_updated_at, assigned_to, pending_harvest_at")
+        .order("created_at", { ascending: false }),
+      supabase.from("profiles").select("id, full_name"),
+    ]);
     setRows((data as FieldRow[]) ?? []);
-    const { data: profs } = await supabase.from("profiles").select("id, full_name");
     const m: Record<string, string> = {};
     (profs ?? []).forEach((p) => (m[p.id] = p.full_name));
     setAgents(m);
