@@ -241,7 +241,82 @@ function DashboardPage() {
         </Card>
       </section>
 
-      {role === "admin" && Object.keys(atRiskByAgent).length > 0 && (
+      <section className="grid gap-6 lg:grid-cols-2">
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-base">
+              <TrendingUp className="h-4 w-4 text-primary" />
+              Stage breakdown
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            {STAGES.map((stage) => {
+              const count = stageCounts[stage] ?? 0;
+              const pct = total > 0 ? Math.round((count / total) * 100) : 0;
+              return (
+                <div key={stage}>
+                  <div className="flex items-center justify-between mb-1.5">
+                    <StageBadge stage={stage} />
+                    <span className="text-sm font-semibold tabular-nums">{count}</span>
+                  </div>
+                  <div className="h-1.5 w-full rounded-full bg-muted overflow-hidden">
+                    <div
+                      className="h-full rounded-full bg-primary/70 transition-all duration-500"
+                      style={{ width: `${pct}%` }}
+                    />
+                  </div>
+                </div>
+              );
+            })}
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-base">
+              <AlertCircle className="h-4 w-4 text-warning-foreground" />
+              Insights
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            {counts["At Risk"] > 0 ? (
+              <div className="rounded-lg border border-warning/30 bg-warning/10 p-3">
+                <p className="text-sm font-medium">
+                  ⚠ {counts["At Risk"]} field{counts["At Risk"] > 1 ? "s" : ""} at risk
+                </p>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Overdue (&gt;100 days), stale (&gt;10 days), or extreme rainfall conditions detected.
+                </p>
+              </div>
+            ) : (
+              <div className="rounded-lg border border-success/30 bg-success/10 p-3">
+                <p className="text-sm font-medium text-success">✓ All fields on track</p>
+                <p className="text-xs text-muted-foreground mt-1">
+                  No at-risk fields right now. Keep the updates flowing.
+                </p>
+              </div>
+            )}
+
+            {total > 0 && (
+              <div className="rounded-lg border border-primary/20 bg-primary/5 p-3">
+                <p className="text-sm font-medium">📊 Most fields: {topStage}</p>
+                <p className="text-xs text-muted-foreground mt-1">
+                  {stageCounts[topStage]} of {total} fields are in this stage.
+                </p>
+              </div>
+            )}
+
+            <div className="rounded-lg border bg-muted/40 p-3">
+              <p className="text-sm font-medium">🌱 Season overview</p>
+              <p className="text-xs text-muted-foreground mt-1">
+                {counts.Completed > 0
+                  ? `${counts.Completed} harvest${counts.Completed > 1 ? "s" : ""} completed this season.`
+                  : "No harvests completed yet this season."}
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+      </section>
         <section>
           <Card>
             <CardHeader>
