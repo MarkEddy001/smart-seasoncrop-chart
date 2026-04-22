@@ -393,9 +393,14 @@ function FieldDetailPage() {
                     <Select value={stage} onValueChange={(v) => setStage(v as Stage)}>
                       <SelectTrigger><SelectValue /></SelectTrigger>
                       <SelectContent>
-                        {STAGES.map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}
+                        {availableStages.map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}
                       </SelectContent>
                     </Select>
+                    {!isAdmin && (
+                      <p className="text-xs text-muted-foreground">
+                        Only admins can mark a field as Harvested. Use “Request harvest” when ready.
+                      </p>
+                    )}
                   </div>
                 </div>
                 <div className="space-y-2">
