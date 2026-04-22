@@ -67,6 +67,7 @@ export type Database = {
           location: string | null
           longitude: number | null
           name: string
+          pending_harvest_at: string | null
           planting_date: string
           recent_rainfall_mm: number | null
           size_hectares: number | null
@@ -83,6 +84,7 @@ export type Database = {
           location?: string | null
           longitude?: number | null
           name: string
+          pending_harvest_at?: string | null
           planting_date: string
           recent_rainfall_mm?: number | null
           size_hectares?: number | null
@@ -99,6 +101,7 @@ export type Database = {
           location?: string | null
           longitude?: number | null
           name?: string
+          pending_harvest_at?: string | null
           planting_date?: string
           recent_rainfall_mm?: number | null
           size_hectares?: number | null

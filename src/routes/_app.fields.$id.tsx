@@ -41,6 +41,7 @@ interface FieldRow {
   latitude: number | null;
   longitude: number | null;
   recent_rainfall_mm: number | null;
+  pending_harvest_at: string | null;
 }
 interface UpdateRow {
   id: string;
@@ -70,26 +71,25 @@ function FieldDetailPage() {
   const fileRef = useRef<HTMLInputElement>(null);
 
   const load = async () => {
-    const { data } = await supabase
-      .from("fields")
-      .select("*")
-      .eq("id", id)
-      .maybeSingle();
-    setField(data as FieldRow | null);
-    if (data) setStage(data.stage as Stage);
+    // Run field + updates queries in parallel
+    const [{ data: fieldData }, { data: u }] = await Promise.all([
+      supabase.from("fields").select("*").eq("id", id).maybeSingle(),
+      supabase
+        .from("field_updates")
+        .select("id, created_at, note, new_stage, previous_stage, author_id, photo_urls, profiles:author_id(full_name)")
+        .eq("field_id", id)
+        .order("created_at", { ascending: false }),
+    ]);
 
-    const { data: u } = await supabase
-      .from("field_updates")
-      .select("id, created_at, note, new_stage, previous_stage, author_id, photo_urls, profiles:author_id(full_name)")
-      .eq("field_id", id)
-      .order("created_at", { ascending: false });
+    setField(fieldData as FieldRow | null);
+    if (fieldData) setStage(fieldData.stage as Stage);
     setUpdates((u as unknown as UpdateRow[]) ?? []);
 
-    if (data?.assigned_to) {
+    if (fieldData?.assigned_to) {
       const { data: p } = await supabase
         .from("profiles")
         .select("full_name")
-        .eq("id", data.assigned_to)
+        .eq("id", fieldData.assigned_to)
         .maybeSingle();
       setAgentName(p?.full_name ?? "");
     } else setAgentName("");
@@ -125,7 +125,86 @@ function FieldDetailPage() {
     return () => ctrl.abort();
   }, [field?.id, field?.latitude, field?.longitude]);
 
-  const canEdit = !!field && (role === "admin" || field.assigned_to === user?.id);
+  const isAdmin = role === "admin";
+  const canEdit = !!field && (isAdmin || field.assigned_to === user?.id);
+  const pendingHarvest = !!field?.pending_harvest_at && field.stage !== "Harvested";
+  // Agents cannot select Harvested — only admins can finalize a harvest
+  const availableStages = isAdmin ? STAGES : STAGES.filter((s) => s !== "Harvested");
+
+  const requestHarvest = async () => {
+    if (!field || !user) return;
+    setSaving(true);
+    const { error } = await supabase
+      .from("fields")
+      .update({ pending_harvest_at: new Date().toISOString() })
+      .eq("id", field.id);
+    if (!error) {
+      await supabase.from("field_updates").insert({
+        field_id: field.id,
+        author_id: user.id,
+        previous_stage: field.stage,
+        new_stage: field.stage,
+        note: "🌾 Harvest requested — awaiting admin verification.",
+        photo_urls: [],
+      });
+    }
+    setSaving(false);
+    if (error) toast.error(error.message);
+    else {
+      toast.success("Harvest request sent to admin");
+      load();
+    }
+  };
+
+  const approveHarvest = async () => {
+    if (!field || !user) return;
+    setSaving(true);
+    const { error } = await supabase
+      .from("fields")
+      .update({ stage: "Harvested", pending_harvest_at: null })
+      .eq("id", field.id);
+    if (!error) {
+      await supabase.from("field_updates").insert({
+        field_id: field.id,
+        author_id: user.id,
+        previous_stage: field.stage,
+        new_stage: "Harvested",
+        note: "✅ Harvest approved by admin.",
+        photo_urls: [],
+      });
+    }
+    setSaving(false);
+    if (error) toast.error(error.message);
+    else {
+      toast.success("Harvest approved — field marked Completed");
+      load();
+    }
+  };
+
+  const rejectHarvest = async () => {
+    if (!field || !user) return;
+    setSaving(true);
+    const { error } = await supabase
+      .from("fields")
+      .update({ pending_harvest_at: null })
+      .eq("id", field.id);
+    if (!error) {
+      await supabase.from("field_updates").insert({
+        field_id: field.id,
+        author_id: user.id,
+        previous_stage: field.stage,
+        new_stage: field.stage,
+        note: "❌ Harvest request rejected by admin — please continue monitoring.",
+        photo_urls: [],
+      });
+    }
+    setSaving(false);
+    if (error) toast.error(error.message);
+    else {
+      toast.success("Harvest request rejected");
+      load();
+    }
+  };
 
   const onPickFiles = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files ?? []);
@@ -149,21 +228,27 @@ function FieldDetailPage() {
     setSaving(true);
     const previous = field.stage;
 
-    // 1. Upload photos
-    const photoUrls: string[] = [];
-    for (const file of photos) {
-      const ext = file.name.split(".").pop() ?? "jpg";
-      const path = `${user.id}/${field.id}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
-      const { error: upErr } = await supabase.storage
-        .from("field-photos")
-        .upload(path, file, { upsert: false, contentType: file.type });
-      if (upErr) {
+    // 1. Upload photos in parallel (much faster than sequential)
+    let photoUrls: string[] = [];
+    if (photos.length > 0) {
+      try {
+        photoUrls = await Promise.all(
+          photos.map(async (file) => {
+            const ext = file.name.split(".").pop() ?? "jpg";
+            const path = `${user.id}/${field.id}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
+            const { error: upErr } = await supabase.storage
+              .from("field-photos")
+              .upload(path, file, { upsert: false, contentType: file.type });
+            if (upErr) throw upErr;
+            const { data: pub } = supabase.storage.from("field-photos").getPublicUrl(path);
+            return pub.publicUrl;
+          }),
+        );
+      } catch (e) {
         setSaving(false);
-        toast.error(`Photo upload failed: ${upErr.message}`);
+        toast.error(`Photo upload failed: ${(e as Error).message}`);
         return;
       }
-      const { data: pub } = supabase.storage.from("field-photos").getPublicUrl(path);
-      photoUrls.push(pub.publicUrl);
     }
 
     // 2. Touch field (stage change or just last_updated_at)
@@ -235,11 +320,44 @@ function FieldDetailPage() {
             {field.size_hectares && ` · ${field.size_hectares} ha`}
           </p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex gap-2 flex-wrap">
           <StageBadge stage={field.stage} />
           <StatusBadge status={status} />
+          {pendingHarvest && (
+            <span className="inline-flex items-center rounded-md border border-warning/40 bg-warning/15 px-2 py-0.5 text-xs font-medium text-warning-foreground">
+              Harvest pending approval
+            </span>
+          )}
         </div>
       </header>
+
+      {pendingHarvest && (
+        <Card className="border-warning/40 bg-warning/5">
+          <CardContent className="p-4 flex items-center justify-between flex-wrap gap-3">
+            <div className="text-sm">
+              <p className="font-medium">Harvest verification needed</p>
+              <p className="text-muted-foreground text-xs mt-0.5">
+                The field agent has marked this field ready for harvest on{" "}
+                {format(new Date(field.pending_harvest_at!), "PP p")}.
+                {isAdmin
+                  ? " Approve to mark it Harvested, or reject to keep monitoring."
+                  : " An admin will review and confirm shortly."}
+              </p>
+            </div>
+            {isAdmin && (
+              <div className="flex gap-2">
+                <Button size="sm" variant="outline" onClick={rejectHarvest} disabled={saving}>
+                  Reject
+                </Button>
+                <Button size="sm" onClick={approveHarvest} disabled={saving}>
+                  {saving && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
+                  Approve harvest
+                </Button>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
 
       <div className="grid gap-6 lg:grid-cols-3">
         <div className="lg:col-span-1 space-y-6">
@@ -281,9 +399,14 @@ function FieldDetailPage() {
                     <Select value={stage} onValueChange={(v) => setStage(v as Stage)}>
                       <SelectTrigger><SelectValue /></SelectTrigger>
                       <SelectContent>
-                        {STAGES.map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}
+                        {availableStages.map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}
                       </SelectContent>
                     </Select>
+                    {!isAdmin && (
+                      <p className="text-xs text-muted-foreground">
+                        Only admins can mark a field as Harvested. Use “Request harvest” when ready.
+                      </p>
+                    )}
                   </div>
                 </div>
                 <div className="space-y-2">
@@ -332,10 +455,22 @@ function FieldDetailPage() {
                   </div>
                 </div>
 
-                <Button type="submit" disabled={saving}>
-                  {saving && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
-                  Save update
-                </Button>
+                <div className="flex flex-wrap gap-2">
+                  <Button type="submit" disabled={saving}>
+                    {saving && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
+                    Save update
+                  </Button>
+                  {canEdit && !isAdmin && field.stage !== "Harvested" && !pendingHarvest && (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={requestHarvest}
+                      disabled={saving}
+                    >
+                      🌾 Request harvest
+                    </Button>
+                  )}
+                </div>
               </form>
             ) : (
               <p className="text-sm text-muted-foreground">View-only access.</p>

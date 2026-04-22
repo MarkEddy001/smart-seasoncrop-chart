@@ -44,6 +44,7 @@ interface FieldRow {
   planting_date: string;
   last_updated_at: string;
   assigned_to: string | null;
+  pending_harvest_at: string | null;
 }
 
 function FieldsPage() {
@@ -58,12 +59,15 @@ function FieldsPage() {
   const [deleting, setDeleting] = useState(false);
 
   const load = async () => {
-    const { data } = await supabase
-      .from("fields")
-      .select("id, name, crop_type, location, stage, planting_date, last_updated_at, assigned_to")
-      .order("created_at", { ascending: false });
+    // Run both queries in parallel for faster load
+    const [{ data }, { data: profs }] = await Promise.all([
+      supabase
+        .from("fields")
+        .select("id, name, crop_type, location, stage, planting_date, last_updated_at, assigned_to, pending_harvest_at")
+        .order("created_at", { ascending: false }),
+      supabase.from("profiles").select("id, full_name"),
+    ]);
     setRows((data as FieldRow[]) ?? []);
-    const { data: profs } = await supabase.from("profiles").select("id, full_name");
     const m: Record<string, string> = {};
     (profs ?? []).forEach((p) => (m[p.id] = p.full_name));
     setAgents(m);
@@ -191,7 +195,16 @@ function FieldsPage() {
                       )}
                     </td>
                     <td className="p-4">{r.crop_type}</td>
-                    <td className="p-4"><StageBadge stage={r.stage} /></td>
+                    <td className="p-4">
+                      <div className="flex items-center gap-1.5 flex-wrap">
+                        <StageBadge stage={r.stage} />
+                        {r.pending_harvest_at && r.stage !== "Harvested" && (
+                          <span className="inline-flex items-center rounded-md border border-warning/40 bg-warning/15 px-1.5 py-0.5 text-[10px] font-medium text-warning-foreground">
+                            Harvest pending
+                          </span>
+                        )}
+                      </div>
+                    </td>
                     <td className="p-4"><StatusBadge status={r.status as Status} /></td>
                     {role === "admin" && (
                       <td className="p-4 text-muted-foreground">
