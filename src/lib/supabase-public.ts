@@ -1,0 +1,4 @@
+export const SUPABASE_URL = "https://qtihghekptsbvzgzzkvk.supabase.co";
+
+export const SUPABASE_PUBLISHABLE_KEY =
+  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InF0aWhnaGVrcHRzYnZ6Z3p6a3ZrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY2NzE0MTksImV4cCI6MjA5MjI0NzQxOX0.6_6PtJzwuJrNBPMBAADzz5MIbX4OvcIhBRKEHTT06e4";
