@@ -3,12 +3,21 @@ import { createClient } from '@supabase/supabase-js';
 import type { Database } from './types';
 
 function createSupabaseClient() {
+  const runtimeEnv =
+    (globalThis as { __SMARTSEASON_ENV__?: Record<string, string | undefined> })
+      .__SMARTSEASON_ENV__ ?? {};
+
   // Use import.meta.env for client-side (Vite build-time replacement)
-  // Fall back to process.env for SSR (server-side rendering)
-  const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL;
+  // Fall back to runtime-injected env (SSR) and process.env (server-side rendering)
+  const SUPABASE_URL =
+    import.meta.env.VITE_SUPABASE_URL ||
+    runtimeEnv.SUPABASE_URL ||
+    process.env.SUPABASE_URL;
   const SUPABASE_PUBLISHABLE_KEY =
     import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY ||
     import.meta.env.VITE_SUPABASE_ANON_KEY ||
+    runtimeEnv.SUPABASE_PUBLISHABLE_KEY ||
+    runtimeEnv.SUPABASE_ANON_KEY ||
     process.env.SUPABASE_PUBLISHABLE_KEY ||
     process.env.SUPABASE_ANON_KEY;
 

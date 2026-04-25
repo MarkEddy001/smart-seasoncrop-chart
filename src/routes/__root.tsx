@@ -50,12 +50,31 @@ export const Route = createRootRoute({
 });
 
 function RootShell({ children }: { children: React.ReactNode }) {
+  const runtimeEnv = {
+    SUPABASE_URL: process.env.SUPABASE_URL ?? process.env.VITE_SUPABASE_URL ?? "",
+    SUPABASE_PUBLISHABLE_KEY:
+      process.env.SUPABASE_PUBLISHABLE_KEY ??
+      process.env.SUPABASE_ANON_KEY ??
+      process.env.VITE_SUPABASE_PUBLISHABLE_KEY ??
+      process.env.VITE_SUPABASE_ANON_KEY ?? "",
+    SUPABASE_ANON_KEY:
+      process.env.SUPABASE_ANON_KEY ??
+      process.env.SUPABASE_PUBLISHABLE_KEY ??
+      process.env.VITE_SUPABASE_ANON_KEY ??
+      process.env.VITE_SUPABASE_PUBLISHABLE_KEY ?? "",
+  };
+
   return (
     <html lang="en">
       <head>
         <HeadContent />
       </head>
       <body>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `window.__SMARTSEASON_ENV__ = ${JSON.stringify(runtimeEnv)};`,
+          }}
+        />
         {children}
         <Scripts />
       </body>

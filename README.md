@@ -23,7 +23,7 @@ Built as a technical assessment — focused on **clean architecture, working bus
 |---|---|---|
 | Framework | **TanStack Start** (React 19 + Vite 7, SSR) | Type-safe file-based routing, server functions/routes out of the box. |
 | Language | **TypeScript** (strict) | Safety end-to-end. |
-| Database | **PostgreSQL** (Lovable Cloud / Supabase) | Real relational DB, RLS, triggers, SQL functions. |
+| Database | **PostgreSQL** (Supabase) | Real relational DB, RLS, triggers, SQL functions. |
 | Auth | **Supabase Auth** (email + password) | Battle-tested, JWT-based, integrates with RLS. |
 | Authorization | **Postgres RLS + `has_role()` SECURITY DEFINER function** | Roles in a separate `user_roles` table — prevents privilege escalation. |
 | Styling | **Tailwind v4 + shadcn/ui** | Semantic tokens defined in `src/styles.css`. |
@@ -67,7 +67,7 @@ A tiny lazy-Proxy wrapper around `createClient` so that build-time bundling neve
 
 ## 🚀 Getting started (local)
 
-This project runs on Lovable Cloud — there's nothing to install or configure. The preview is live in the editor.
+Run this project locally using standard Node.js tooling.
 
 ### First-time seeding
 The database is empty until you seed it. Hit this URL **once**:
