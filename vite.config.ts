@@ -13,23 +13,4 @@ export default defineConfig({
 		tailwindcss(),
 		cloudflare(),
 	],
-	// TanStack Start virtual modules are provided by the tanstackStart() plugin
-	// at runtime — exclude them from Vite's dep optimizer so esbuild doesn't try
-	// to resolve them ahead of time. Fixes TanStack/router#4285 with the
-	// Cloudflare Workers Vite plugin.
-	optimizeDeps: {
-		exclude: [
-			"@tanstack/react-start",
-			"@tanstack/start-server-core",
-			"@tanstack/react-start-server",
-			"@tanstack/react-start-client",
-			"tanstack-start-manifest:v",
-			"tanstack-start-injected-head-scripts:v",
-			"tanstack-start-server-fn-manifest:v",
-			"tanstack-start-route-tree:v",
-			"#tanstack-router-entry",
-			"#tanstack-start-entry",
-			"#tanstack-start-plugin-adapters",
-		],
-	},
 });
