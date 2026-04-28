@@ -13,4 +13,13 @@ export default defineConfig({
 		tailwindcss(),
 		cloudflare(),
 	],
+	optimizeDeps: {
+		exclude: [
+			"@tanstack/start-server-core",
+			"@tanstack/start-client-core",
+			"@tanstack/react-start",
+			"@tanstack/react-start/client",
+			"@tanstack/react-start/server",
+		],
+	},
 });
