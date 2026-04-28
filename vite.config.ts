@@ -5,6 +5,15 @@ import tailwindcss from "@tailwindcss/vite";
 import { defineConfig } from "vite";
 import tsConfigPaths from "vite-tsconfig-paths";
 
+const tanstackOptimizerExcludes = [
+	"@tanstack/start-server-core",
+	"@tanstack/start-client-core",
+	"@tanstack/react-start",
+	"@tanstack/react-start/client",
+	"@tanstack/react-start/server",
+	"@tanstack/react-router",
+];
+
 export default defineConfig({
 	plugins: [
 		tsConfigPaths({ projects: ["./tsconfig.json"] }),
@@ -14,12 +23,13 @@ export default defineConfig({
 		tailwindcss(),
 	],
 	optimizeDeps: {
-		exclude: [
-			"@tanstack/start-server-core",
-			"@tanstack/start-client-core",
-			"@tanstack/react-start",
-			"@tanstack/react-start/client",
-			"@tanstack/react-start/server",
-		],
+		exclude: tanstackOptimizerExcludes,
+	},
+	environments: {
+		ssr: {
+			optimizeDeps: {
+				exclude: tanstackOptimizerExcludes,
+			},
+		},
 	},
 });
