@@ -1,7 +1,7 @@
 import { defineTool, ToolError } from "@lovable.dev/mcp-js";
 import { z } from "zod";
 import { supabaseForUser } from "../supabase";
-import { computeStatus, type Stage } from "@/lib/status";
+import { computeStatus, type Stage } from "../../status";
 
 export default defineTool({
   name: "list_fields",

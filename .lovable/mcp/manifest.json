@@ -1,0 +1,217 @@
+{
+  "version": 1,
+  "sdk_version": "0.26.1",
+  "path": "/api/public/mcp",
+  "auth": {
+    "type": "oauth",
+    "issuer": "https://qtihghekptsbvzgzzkvk.supabase.co/auth/v1",
+    "accepted_audiences": [
+      "authenticated"
+    ]
+  },
+  "mcp": {
+    "server": {
+      "name": "smart-season-tracker",
+      "version": "0.1.0",
+      "title": "Smart Season Tracker"
+    },
+    "tools": [
+      {
+        "name": "list_fields",
+        "title": "List fields",
+        "description": "List the crop fields visible to the signed-in user (admins see all fields, field agents see fields assigned to them), including crop, stage and computed season status.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "stage": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "enum": [
+                    "Planted",
+                    "Growing",
+                    "Ready",
+                    "Harvested"
+                  ]
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Optional stage filter. Pass null for all stages."
+            }
+          },
+          "required": [
+            "stage"
+          ],
+          "additionalProperties": false,
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "get_field",
+        "title": "Get field details",
+        "description": "Get one field with its computed status, rainfall risk and the most recent progress updates from its history timeline.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "field_id": {
+              "type": "string",
+              "format": "uuid",
+              "description": "The field id."
+            }
+          },
+          "required": [
+            "field_id"
+          ],
+          "additionalProperties": false,
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "log_field_update",
+        "title": "Log field update",
+        "description": "Add a progress note to a field's history timeline, optionally advancing its stage. Field agents cannot set the stage to Harvested directly — use request_harvest instead.",
+        "annotations": {
+          "readOnlyHint": false,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "field_id": {
+              "type": "string",
+              "format": "uuid",
+              "description": "The field id."
+            },
+            "note": {
+              "type": "string",
+              "minLength": 1,
+              "description": "The progress note to record."
+            },
+            "new_stage": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "enum": [
+                    "Planted",
+                    "Growing",
+                    "Ready"
+                  ]
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Optional new stage. Pass null to leave the stage unchanged."
+            }
+          },
+          "required": [
+            "field_id",
+            "note",
+            "new_stage"
+          ],
+          "additionalProperties": false,
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "request_harvest",
+        "title": "Request harvest approval",
+        "description": "Mark a field as ready for harvest and submit it for admin (coordinator) verification. The field is only marked Harvested once an admin approves it.",
+        "annotations": {
+          "readOnlyHint": false,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "field_id": {
+              "type": "string",
+              "format": "uuid",
+              "description": "The field id."
+            },
+            "note": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Optional note for the coordinator. Pass null to omit."
+            }
+          },
+          "required": [
+            "field_id",
+            "note"
+          ],
+          "additionalProperties": false,
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "review_harvest",
+        "title": "Approve or reject harvest",
+        "description": "Admin (coordinator) only: approve a pending harvest request — marking the field Harvested and the season complete — or reject it and send the field back to the agent.",
+        "annotations": {
+          "readOnlyHint": false,
+          "destructiveHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "field_id": {
+              "type": "string",
+              "format": "uuid",
+              "description": "The field id."
+            },
+            "decision": {
+              "type": "string",
+              "enum": [
+                "approve",
+                "reject"
+              ],
+              "description": "Approve or reject the harvest request."
+            },
+            "note": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Optional reviewer note. Pass null to omit."
+            }
+          },
+          "required": [
+            "field_id",
+            "decision",
+            "note"
+          ],
+          "additionalProperties": false,
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "outputSchema": null
+      }
+    ]
+  }
+}
