@@ -1,9 +1,11 @@
 import { cloudflare } from "@cloudflare/vite-plugin";
 import react from "@vitejs/plugin-react";
 import { tanstackStart } from "@tanstack/react-start/plugin/vite";
+import { mcpPlugin } from "@lovable.dev/mcp-js/stacks/tanstack/vite";
 import tailwindcss from "@tailwindcss/vite";
 import { defineConfig } from "vite";
 import tsConfigPaths from "vite-tsconfig-paths";
+
 
 const tanstackOptimizerExcludes = [
 	"@tanstack/start-server-core",
@@ -12,6 +14,8 @@ const tanstackOptimizerExcludes = [
 	"@tanstack/react-start/client",
 	"@tanstack/react-start/server",
 	"@tanstack/react-router",
+	"@lovable.dev/mcp-js",
+	"@lovable.dev/mcp-js/stacks/tanstack",
 ];
 
 export default defineConfig({
@@ -19,7 +23,12 @@ export default defineConfig({
 		tsConfigPaths({ projects: ["./tsconfig.json"] }),
 		cloudflare({ viteEnvironment: { name: "ssr" } }),
 		tanstackStart(),
+		mcpPlugin({
+			path: "/api/public/mcp",
+			metadataPath: "/api/public/.well-known/oauth-protected-resource",
+		}),
 		react(),
+
 		tailwindcss(),
 	],
 	optimizeDeps: {
