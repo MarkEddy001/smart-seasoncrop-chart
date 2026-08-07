@@ -9,19 +9,34 @@ import { Card, CardContent } from "@/components/ui/card";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/login")({
+  validateSearch: (s: Record<string, unknown>) => ({
+    next: typeof s.next === "string" ? s.next : undefined,
+  }),
   component: LoginPage,
 });
+
+function safeNext(next: string | undefined) {
+  return next && next.startsWith("/") && !next.startsWith("//") ? next : null;
+}
 
 function LoginPage() {
   const { signIn, session, loading } = useAuth();
   const navigate = useNavigate();
+  const { next } = Route.useSearch();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
+  const goNext = () => {
+    const target = safeNext(next);
+    if (target) window.location.href = target;
+    else navigate({ to: "/dashboard" });
+  };
+
   useEffect(() => {
-    if (!loading && session) navigate({ to: "/dashboard" });
-  }, [loading, session, navigate]);
+    if (!loading && session) goNext();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [loading, session]);
 
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -29,8 +44,9 @@ function LoginPage() {
     const { error } = await signIn(email.trim(), password);
     setSubmitting(false);
     if (error) toast.error(error);
-    else navigate({ to: "/dashboard" });
+    else goNext();
   };
+
 
   const fillDemo = (em: string, pw: string) => {
     setEmail(em);

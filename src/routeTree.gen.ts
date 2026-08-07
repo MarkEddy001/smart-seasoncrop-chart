@@ -17,7 +17,12 @@ import { Route as ApiSeedRouteImport } from './routes/api.seed'
 import { Route as AppUsersRouteImport } from './routes/_app.users'
 import { Route as AppFieldsRouteImport } from './routes/_app.fields'
 import { Route as AppDashboardRouteImport } from './routes/_app.dashboard'
+import { Route as ApiPublicMcpRouteImport } from './routes/api/public/mcp'
 import { Route as AppFieldsIdRouteImport } from './routes/_app.fields.$id'
+import { Route as DotlovableOauthConsentRouteImport } from './routes/[.]lovable.oauth.consent'
+import { Route as ApiPublicChar91DotwellKnownChar93OauthProtectedResourceRouteImport } from './routes/api/public/[.well-known]/oauth-protected-resource'
+import { Route as ApiPublicChar91DotmcpChar93ListToolsRouteImport } from './routes/api/public/[.mcp]/list-tools'
+import { Route as ApiPublicChar91DotmcpChar93InvokeToolToolRouteImport } from './routes/api/public/[.mcp]/invoke-tool/$tool'
 
 const SignupRoute = SignupRouteImport.update({
   id: '/signup',
@@ -58,11 +63,39 @@ const AppDashboardRoute = AppDashboardRouteImport.update({
   path: '/dashboard',
   getParentRoute: () => AppRoute,
 } as any)
+const ApiPublicMcpRoute = ApiPublicMcpRouteImport.update({
+  id: '/api/public/mcp',
+  path: '/api/public/mcp',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AppFieldsIdRoute = AppFieldsIdRouteImport.update({
   id: '/$id',
   path: '/$id',
   getParentRoute: () => AppFieldsRoute,
 } as any)
+const DotlovableOauthConsentRoute = DotlovableOauthConsentRouteImport.update({
+  id: '/.lovable/oauth/consent',
+  path: '/.lovable/oauth/consent',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiPublicChar91DotwellKnownChar93OauthProtectedResourceRoute =
+  ApiPublicChar91DotwellKnownChar93OauthProtectedResourceRouteImport.update({
+    id: '/api/public/.well-known/oauth-protected-resource',
+    path: '/api/public/.well-known/oauth-protected-resource',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiPublicChar91DotmcpChar93ListToolsRoute =
+  ApiPublicChar91DotmcpChar93ListToolsRouteImport.update({
+    id: '/api/public/.mcp/list-tools',
+    path: '/api/public/.mcp/list-tools',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiPublicChar91DotmcpChar93InvokeToolToolRoute =
+  ApiPublicChar91DotmcpChar93InvokeToolToolRouteImport.update({
+    id: '/api/public/.mcp/invoke-tool/$tool',
+    path: '/api/public/.mcp/invoke-tool/$tool',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -72,7 +105,12 @@ export interface FileRoutesByFullPath {
   '/fields': typeof AppFieldsRouteWithChildren
   '/users': typeof AppUsersRoute
   '/api/seed': typeof ApiSeedRoute
+  '/.lovable/oauth/consent': typeof DotlovableOauthConsentRoute
   '/fields/$id': typeof AppFieldsIdRoute
+  '/api/public/mcp': typeof ApiPublicMcpRoute
+  '/api/public/.mcp/list-tools': typeof ApiPublicChar91DotmcpChar93ListToolsRoute
+  '/api/public/.well-known/oauth-protected-resource': typeof ApiPublicChar91DotwellKnownChar93OauthProtectedResourceRoute
+  '/api/public/.mcp/invoke-tool/$tool': typeof ApiPublicChar91DotmcpChar93InvokeToolToolRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -82,7 +120,12 @@ export interface FileRoutesByTo {
   '/fields': typeof AppFieldsRouteWithChildren
   '/users': typeof AppUsersRoute
   '/api/seed': typeof ApiSeedRoute
+  '/.lovable/oauth/consent': typeof DotlovableOauthConsentRoute
   '/fields/$id': typeof AppFieldsIdRoute
+  '/api/public/mcp': typeof ApiPublicMcpRoute
+  '/api/public/.mcp/list-tools': typeof ApiPublicChar91DotmcpChar93ListToolsRoute
+  '/api/public/.well-known/oauth-protected-resource': typeof ApiPublicChar91DotwellKnownChar93OauthProtectedResourceRoute
+  '/api/public/.mcp/invoke-tool/$tool': typeof ApiPublicChar91DotmcpChar93InvokeToolToolRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -94,7 +137,12 @@ export interface FileRoutesById {
   '/_app/fields': typeof AppFieldsRouteWithChildren
   '/_app/users': typeof AppUsersRoute
   '/api/seed': typeof ApiSeedRoute
+  '/.lovable/oauth/consent': typeof DotlovableOauthConsentRoute
   '/_app/fields/$id': typeof AppFieldsIdRoute
+  '/api/public/mcp': typeof ApiPublicMcpRoute
+  '/api/public/.mcp/list-tools': typeof ApiPublicChar91DotmcpChar93ListToolsRoute
+  '/api/public/.well-known/oauth-protected-resource': typeof ApiPublicChar91DotwellKnownChar93OauthProtectedResourceRoute
+  '/api/public/.mcp/invoke-tool/$tool': typeof ApiPublicChar91DotmcpChar93InvokeToolToolRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -106,7 +154,12 @@ export interface FileRouteTypes {
     | '/fields'
     | '/users'
     | '/api/seed'
+    | '/.lovable/oauth/consent'
     | '/fields/$id'
+    | '/api/public/mcp'
+    | '/api/public/.mcp/list-tools'
+    | '/api/public/.well-known/oauth-protected-resource'
+    | '/api/public/.mcp/invoke-tool/$tool'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -116,7 +169,12 @@ export interface FileRouteTypes {
     | '/fields'
     | '/users'
     | '/api/seed'
+    | '/.lovable/oauth/consent'
     | '/fields/$id'
+    | '/api/public/mcp'
+    | '/api/public/.mcp/list-tools'
+    | '/api/public/.well-known/oauth-protected-resource'
+    | '/api/public/.mcp/invoke-tool/$tool'
   id:
     | '__root__'
     | '/'
@@ -127,7 +185,12 @@ export interface FileRouteTypes {
     | '/_app/fields'
     | '/_app/users'
     | '/api/seed'
+    | '/.lovable/oauth/consent'
     | '/_app/fields/$id'
+    | '/api/public/mcp'
+    | '/api/public/.mcp/list-tools'
+    | '/api/public/.well-known/oauth-protected-resource'
+    | '/api/public/.mcp/invoke-tool/$tool'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -136,6 +199,11 @@ export interface RootRouteChildren {
   LoginRoute: typeof LoginRoute
   SignupRoute: typeof SignupRoute
   ApiSeedRoute: typeof ApiSeedRoute
+  DotlovableOauthConsentRoute: typeof DotlovableOauthConsentRoute
+  ApiPublicMcpRoute: typeof ApiPublicMcpRoute
+  ApiPublicChar91DotmcpChar93ListToolsRoute: typeof ApiPublicChar91DotmcpChar93ListToolsRoute
+  ApiPublicChar91DotwellKnownChar93OauthProtectedResourceRoute: typeof ApiPublicChar91DotwellKnownChar93OauthProtectedResourceRoute
+  ApiPublicChar91DotmcpChar93InvokeToolToolRoute: typeof ApiPublicChar91DotmcpChar93InvokeToolToolRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -196,12 +264,47 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppDashboardRouteImport
       parentRoute: typeof AppRoute
     }
+    '/api/public/mcp': {
+      id: '/api/public/mcp'
+      path: '/api/public/mcp'
+      fullPath: '/api/public/mcp'
+      preLoaderRoute: typeof ApiPublicMcpRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/_app/fields/$id': {
       id: '/_app/fields/$id'
       path: '/$id'
       fullPath: '/fields/$id'
       preLoaderRoute: typeof AppFieldsIdRouteImport
       parentRoute: typeof AppFieldsRoute
+    }
+    '/.lovable/oauth/consent': {
+      id: '/.lovable/oauth/consent'
+      path: '/.lovable/oauth/consent'
+      fullPath: '/.lovable/oauth/consent'
+      preLoaderRoute: typeof DotlovableOauthConsentRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/.well-known/oauth-protected-resource': {
+      id: '/api/public/.well-known/oauth-protected-resource'
+      path: '/api/public/.well-known/oauth-protected-resource'
+      fullPath: '/api/public/.well-known/oauth-protected-resource'
+      preLoaderRoute: typeof ApiPublicChar91DotwellKnownChar93OauthProtectedResourceRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/.mcp/list-tools': {
+      id: '/api/public/.mcp/list-tools'
+      path: '/api/public/.mcp/list-tools'
+      fullPath: '/api/public/.mcp/list-tools'
+      preLoaderRoute: typeof ApiPublicChar91DotmcpChar93ListToolsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/.mcp/invoke-tool/$tool': {
+      id: '/api/public/.mcp/invoke-tool/$tool'
+      path: '/api/public/.mcp/invoke-tool/$tool'
+      fullPath: '/api/public/.mcp/invoke-tool/$tool'
+      preLoaderRoute: typeof ApiPublicChar91DotmcpChar93InvokeToolToolRouteImport
+      parentRoute: typeof rootRouteImport
     }
   }
 }
@@ -238,6 +341,14 @@ const rootRouteChildren: RootRouteChildren = {
   LoginRoute: LoginRoute,
   SignupRoute: SignupRoute,
   ApiSeedRoute: ApiSeedRoute,
+  DotlovableOauthConsentRoute: DotlovableOauthConsentRoute,
+  ApiPublicMcpRoute: ApiPublicMcpRoute,
+  ApiPublicChar91DotmcpChar93ListToolsRoute:
+    ApiPublicChar91DotmcpChar93ListToolsRoute,
+  ApiPublicChar91DotwellKnownChar93OauthProtectedResourceRoute:
+    ApiPublicChar91DotwellKnownChar93OauthProtectedResourceRoute,
+  ApiPublicChar91DotmcpChar93InvokeToolToolRoute:
+    ApiPublicChar91DotmcpChar93InvokeToolToolRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
