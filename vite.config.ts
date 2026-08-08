@@ -14,8 +14,6 @@ const tanstackOptimizerExcludes = [
 	"@tanstack/react-start/client",
 	"@tanstack/react-start/server",
 	"@tanstack/react-router",
-	"@lovable.dev/mcp-js",
-	"@lovable.dev/mcp-js/stacks/tanstack",
 ];
 
 export default defineConfig({
